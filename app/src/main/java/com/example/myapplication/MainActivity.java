@@ -15,6 +15,9 @@ public class MainActivity extends AppCompatActivity {
 
     private BottomNavigationView bottomNavigationView;
 
+    // Database helper
+    private DatabaseHelper databaseHelper;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -22,6 +25,18 @@ public class MainActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
 
+        // ---------------------------------------
+        // Open/Create SmartPantry.db
+        // ---------------------------------------
+        databaseHelper = new DatabaseHelper(this);
+
+        // This creates the database if it does not exist
+        // and opens it if it already exists.
+        databaseHelper.getWritableDatabase();
+
+        // ---------------------------------------
+        // Handle system window insets
+        // ---------------------------------------
         ViewCompat.setOnApplyWindowInsetsListener(
                 findViewById(R.id.main),
                 (v, insets) -> {
@@ -41,7 +56,11 @@ public class MainActivity extends AppCompatActivity {
                 }
         );
 
-        bottomNavigationView = findViewById(R.id.bottomNavigationView);
+        // ---------------------------------------
+        // Bottom Navigation
+        // ---------------------------------------
+        bottomNavigationView =
+                findViewById(R.id.bottomNavigationView);
 
         // Load Pantry screen when application starts
         if (savedInstanceState == null) {
@@ -72,11 +91,17 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    // ---------------------------------------
+    // Load Fragment
+    // ---------------------------------------
     private void loadFragment(Fragment fragment) {
 
         getSupportFragmentManager()
                 .beginTransaction()
-                .replace(R.id.fragmentContainer, fragment)
+                .replace(
+                        R.id.fragmentContainer,
+                        fragment
+                )
                 .commit();
     }
 }
