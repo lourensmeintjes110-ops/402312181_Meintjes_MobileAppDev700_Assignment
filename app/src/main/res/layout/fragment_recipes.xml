@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Suggested Recipes"
+            android:textSize="28sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Recipes based on your leftover ingredients"
+            android:textSize="16sp"
+            android:layout_marginBottom="25dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="🍝 Pasta with Tomato Sauce"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:padding="15dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Uses: Pasta, tomatoes, onion"
+            android:textSize="15sp"
+            android:paddingStart="15dp"
+            android:paddingBottom="10dp" />
+
+        <Button
+            android:id="@+id/btnViewRecipe"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="View Recipe" />
+
+    </LinearLayout>
+
+</ScrollView>
