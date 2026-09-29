@@ -80,4 +80,68 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
         return db.insert("ingredients", null, values);
     }
+    public java.util.ArrayList<Ingredient> getAllIngredients() {
+
+        java.util.ArrayList<Ingredient> ingredientList =
+                new java.util.ArrayList<>();
+
+        SQLiteDatabase db = this.getReadableDatabase();
+
+        android.database.Cursor cursor = db.rawQuery(
+                "SELECT id, name, quantity, unit, expiry_date, category " +
+                        "FROM ingredients ORDER BY name ASC",
+                null
+        );
+
+        if (cursor.moveToFirst()) {
+
+            do {
+
+                Ingredient ingredient = new Ingredient();
+
+                ingredient.setId(
+                        cursor.getInt(
+                                cursor.getColumnIndexOrThrow("id")
+                        )
+                );
+
+                ingredient.setName(
+                        cursor.getString(
+                                cursor.getColumnIndexOrThrow("name")
+                        )
+                );
+
+                ingredient.setQuantity(
+                        cursor.getDouble(
+                                cursor.getColumnIndexOrThrow("quantity")
+                        )
+                );
+
+                ingredient.setUnit(
+                        cursor.getString(
+                                cursor.getColumnIndexOrThrow("unit")
+                        )
+                );
+
+                ingredient.setExpiryDate(
+                        cursor.getString(
+                                cursor.getColumnIndexOrThrow("expiry_date")
+                        )
+                );
+
+                ingredient.setCategory(
+                        cursor.getString(
+                                cursor.getColumnIndexOrThrow("category")
+                        )
+                );
+
+                ingredientList.add(ingredient);
+
+            } while (cursor.moveToNext());
+        }
+
+        cursor.close();
+
+        return ingredientList;
+    }
 }

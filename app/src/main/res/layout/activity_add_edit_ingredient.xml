@@ -19,13 +19,17 @@
             android:textStyle="bold"
             android:layout_marginBottom="25dp" />
 
+        <!-- Ingredient Name -->
+
         <EditText
             android:id="@+id/edtIngredientName"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="Ingredient name"
-            android:inputType="text"
+            android:inputType="textCapSentences"
             android:layout_marginBottom="15dp" />
+
+        <!-- Quantity -->
 
         <EditText
             android:id="@+id/edtQuantity"
@@ -35,19 +39,45 @@
             android:inputType="numberDecimal"
             android:layout_marginBottom="15dp" />
 
+        <!-- Unit -->
+
         <EditText
             android:id="@+id/edtUnit"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="Unit (kg, g, L, items...)"
             android:inputType="text"
+            android:layout_marginBottom="15dp" />
+
+        <!-- Expiry Date -->
+
+        <EditText
+            android:id="@+id/edtExpiryDate"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Expiry date (YYYY-MM-DD)"
+            android:inputType="date"
+            android:layout_marginBottom="15dp" />
+
+        <!-- Category -->
+
+        <EditText
+            android:id="@+id/edtCategory"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Category (Dairy, Meat, Vegetables...)"
+            android:inputType="textCapSentences"
             android:layout_marginBottom="25dp" />
+
+        <!-- Save -->
 
         <Button
             android:id="@+id/btnSaveIngredient"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Save Ingredient" />
+
+        <!-- Cancel -->
 
         <Button
             android:id="@+id/btnCancelIngredient"
