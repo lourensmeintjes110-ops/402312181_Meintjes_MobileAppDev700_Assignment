@@ -14,8 +14,6 @@ import com.google.android.material.bottomnavigation.BottomNavigationView;
 public class MainActivity extends AppCompatActivity {
 
     private BottomNavigationView bottomNavigationView;
-
-    // Database helper
     private DatabaseHelper databaseHelper;
 
     @Override
@@ -26,16 +24,13 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         // ---------------------------------------
-        // Open/Create SmartPantry.db
+        // Database
         // ---------------------------------------
         databaseHelper = new DatabaseHelper(this);
-
-        // This creates the database if it does not exist
-        // and opens it if it already exists.
         databaseHelper.getWritableDatabase();
 
         // ---------------------------------------
-        // Handle system window insets
+        // System window insets
         // ---------------------------------------
         ViewCompat.setOnApplyWindowInsetsListener(
                 findViewById(R.id.main),
@@ -62,11 +57,7 @@ public class MainActivity extends AppCompatActivity {
         bottomNavigationView =
                 findViewById(R.id.bottomNavigationView);
 
-        // Load Pantry screen when application starts
-        if (savedInstanceState == null) {
-            loadFragment(new PantryFragment());
-        }
-
+        // Handle navigation with ONE click
         bottomNavigationView.setOnItemSelectedListener(item -> {
 
             int itemId = item.getItemId();
@@ -89,6 +80,16 @@ public class MainActivity extends AppCompatActivity {
 
             return false;
         });
+
+        // ---------------------------------------
+        // Open Pantry when app starts
+        // ---------------------------------------
+        if (savedInstanceState == null) {
+
+            bottomNavigationView.setSelectedItemId(
+                    R.id.nav_pantry
+            );
+        }
     }
 
     // ---------------------------------------
