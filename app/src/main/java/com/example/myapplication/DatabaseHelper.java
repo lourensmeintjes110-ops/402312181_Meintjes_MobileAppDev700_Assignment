@@ -2,8 +2,11 @@ package com.example.myapplication;
 
 import android.content.ContentValues;
 import android.content.Context;
+import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+
+import java.util.ArrayList;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
 
@@ -64,8 +67,13 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.execSQL("DROP TABLE IF EXISTS recipe_ingredients");
         db.execSQL("DROP TABLE IF EXISTS recipes");
         db.execSQL("DROP TABLE IF EXISTS ingredients");
+
         onCreate(db);
     }
+
+    // =========================
+    // ADD INGREDIENT
+    // =========================
     public long addIngredient(Ingredient ingredient) {
 
         SQLiteDatabase db = this.getWritableDatabase();
@@ -78,16 +86,61 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         values.put("expiry_date", ingredient.getExpiryDate());
         values.put("category", ingredient.getCategory());
 
-        return db.insert("ingredients", null, values);
+        return db.insert(
+                "ingredients",
+                null,
+                values
+        );
     }
-    public java.util.ArrayList<Ingredient> getAllIngredients() {
 
-        java.util.ArrayList<Ingredient> ingredientList =
-                new java.util.ArrayList<>();
+    // =========================
+    // UPDATE INGREDIENT
+    // =========================
+    public int updateIngredient(Ingredient ingredient) {
+
+        SQLiteDatabase db = this.getWritableDatabase();
+
+        ContentValues values = new ContentValues();
+
+        values.put("name", ingredient.getName());
+        values.put("quantity", ingredient.getQuantity());
+        values.put("unit", ingredient.getUnit());
+        values.put("expiry_date", ingredient.getExpiryDate());
+        values.put("category", ingredient.getCategory());
+
+        return db.update(
+                "ingredients",
+                values,
+                "id = ?",
+                new String[]{String.valueOf(ingredient.getId())}
+        );
+    }
+
+    // =========================
+    // DELETE INGREDIENT
+    // =========================
+    public int deleteIngredient(int id) {
+
+        SQLiteDatabase db = this.getWritableDatabase();
+
+        return db.delete(
+                "ingredients",
+                "id = ?",
+                new String[]{String.valueOf(id)}
+        );
+    }
+
+    // =========================
+    // GET ALL INGREDIENTS
+    // =========================
+    public ArrayList<Ingredient> getAllIngredients() {
+
+        ArrayList<Ingredient> ingredientList =
+                new ArrayList<>();
 
         SQLiteDatabase db = this.getReadableDatabase();
 
-        android.database.Cursor cursor = db.rawQuery(
+        Cursor cursor = db.rawQuery(
                 "SELECT id, name, quantity, unit, expiry_date, category " +
                         "FROM ingredients ORDER BY name ASC",
                 null
@@ -143,5 +196,66 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         cursor.close();
 
         return ingredientList;
+    }
+
+    // =========================
+    // GET INGREDIENT BY ID
+    // =========================
+    public Ingredient getIngredientById(int id) {
+
+        SQLiteDatabase db = this.getReadableDatabase();
+
+        Cursor cursor = db.rawQuery(
+                "SELECT id, name, quantity, unit, expiry_date, category " +
+                        "FROM ingredients WHERE id = ?",
+                new String[]{String.valueOf(id)}
+        );
+
+        Ingredient ingredient = null;
+
+        if (cursor.moveToFirst()) {
+
+            ingredient = new Ingredient();
+
+            ingredient.setId(
+                    cursor.getInt(
+                            cursor.getColumnIndexOrThrow("id")
+                    )
+            );
+
+            ingredient.setName(
+                    cursor.getString(
+                            cursor.getColumnIndexOrThrow("name")
+                    )
+            );
+
+            ingredient.setQuantity(
+                    cursor.getDouble(
+                            cursor.getColumnIndexOrThrow("quantity")
+                    )
+            );
+
+            ingredient.setUnit(
+                    cursor.getString(
+                            cursor.getColumnIndexOrThrow("unit")
+                    )
+            );
+
+            ingredient.setExpiryDate(
+                    cursor.getString(
+                            cursor.getColumnIndexOrThrow("expiry_date")
+                    )
+            );
+
+            ingredient.setCategory(
+                    cursor.getString(
+                            cursor.getColumnIndexOrThrow("category")
+                    )
+            );
+        }
+
+        cursor.close();
+
+        return ingredient;
     }
 }

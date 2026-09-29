@@ -1,5 +1,6 @@
 package com.example.myapplication;
 
+import android.app.AlertDialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -7,6 +8,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -27,7 +29,6 @@ public class PantryFragment extends Fragment {
     private ArrayList<Ingredient> ingredientList;
 
     public PantryFragment() {
-        // Required empty constructor
     }
 
     @Nullable
@@ -43,7 +44,6 @@ public class PantryFragment extends Fragment {
                 false
         );
 
-        // Find views
         recyclerViewIngredients =
                 view.findViewById(
                         R.id.recyclerViewIngredients
@@ -59,16 +59,13 @@ public class PantryFragment extends Fragment {
                         R.id.btnAddIngredient
                 );
 
-        // Database
         databaseHelper =
                 new DatabaseHelper(requireContext());
 
-        // RecyclerView setup
         recyclerViewIngredients.setLayoutManager(
                 new LinearLayoutManager(requireContext())
         );
 
-        // Add Ingredient button
         btnAddIngredient.setOnClickListener(v -> {
 
             Intent intent = new Intent(
@@ -92,20 +89,19 @@ public class PantryFragment extends Fragment {
 
     private void loadIngredients() {
 
-        // Get ingredients from SQLite
         ingredientList =
                 databaseHelper.getAllIngredients();
 
-        // Create adapter
         ingredientAdapter =
-                new IngredientAdapter(ingredientList);
+                new IngredientAdapter(
+                        ingredientList,
+                        ingredient -> showDeleteDialog(ingredient)
+                );
 
-        // Connect adapter to RecyclerView
         recyclerViewIngredients.setAdapter(
                 ingredientAdapter
         );
 
-        // Show/hide empty message
         if (ingredientList.isEmpty()) {
 
             txtEmptyPantry.setVisibility(
@@ -126,5 +122,55 @@ public class PantryFragment extends Fragment {
                     View.VISIBLE
             );
         }
+    }
+
+    private void showDeleteDialog(Ingredient ingredient) {
+
+        new AlertDialog.Builder(requireContext())
+
+                .setTitle("Delete Ingredient")
+
+                .setMessage(
+                        "Are you sure you want to delete \"" +
+                                ingredient.getName() +
+                                "\"?"
+                )
+
+                .setPositiveButton(
+                        "Delete",
+                        (dialog, which) -> {
+
+                            int result =
+                                    databaseHelper.deleteIngredient(
+                                            ingredient.getId()
+                                    );
+
+                            if (result > 0) {
+
+                                Toast.makeText(
+                                        requireContext(),
+                                        "Ingredient deleted",
+                                        Toast.LENGTH_SHORT
+                                ).show();
+
+                                loadIngredients();
+
+                            } else {
+
+                                Toast.makeText(
+                                        requireContext(),
+                                        "Unable to delete ingredient",
+                                        Toast.LENGTH_SHORT
+                                ).show();
+                            }
+                        }
+                )
+
+                .setNegativeButton(
+                        "Cancel",
+                        null
+                )
+
+                .show();
     }
 }

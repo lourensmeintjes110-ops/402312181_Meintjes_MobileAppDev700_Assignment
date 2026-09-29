@@ -17,27 +17,20 @@ public class AddEditIngredientActivity extends AppCompatActivity {
 
     private DatabaseHelper databaseHelper;
 
+    // ID of ingredient being edited
+    private int ingredientId = -1;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         setContentView(R.layout.activity_add_edit_ingredient);
 
-        // Connect XML fields
-        edtIngredientName =
-                findViewById(R.id.edtIngredientName);
-
-        edtQuantity =
-                findViewById(R.id.edtQuantity);
-
-        edtUnit =
-                findViewById(R.id.edtUnit);
-
-        edtExpiryDate =
-                findViewById(R.id.edtExpiryDate);
-
-        edtCategory =
-                findViewById(R.id.edtCategory);
+        edtIngredientName = findViewById(R.id.edtIngredientName);
+        edtQuantity = findViewById(R.id.edtQuantity);
+        edtUnit = findViewById(R.id.edtUnit);
+        edtExpiryDate = findViewById(R.id.edtExpiryDate);
+        edtCategory = findViewById(R.id.edtCategory);
 
         Button btnSaveIngredient =
                 findViewById(R.id.btnSaveIngredient);
@@ -45,59 +38,74 @@ public class AddEditIngredientActivity extends AppCompatActivity {
         Button btnCancelIngredient =
                 findViewById(R.id.btnCancelIngredient);
 
-        // Open database
-        databaseHelper =
-                new DatabaseHelper(this);
+        databaseHelper = new DatabaseHelper(this);
 
-        // Save button
-        btnSaveIngredient.setOnClickListener(v -> {
+        // Check if we are editing an existing ingredient
+        ingredientId = getIntent().getIntExtra("ingredient_id", -1);
 
-            saveIngredient();
+        if (ingredientId != -1) {
 
-        });
+            loadIngredientForEditing();
 
-        // Cancel button
-        btnCancelIngredient.setOnClickListener(v -> {
+            btnSaveIngredient.setText("Update Ingredient");
 
-            finish();
+        } else {
 
-        });
+            btnSaveIngredient.setText("Save Ingredient");
+        }
+
+        btnSaveIngredient.setOnClickListener(v -> saveIngredient());
+
+        btnCancelIngredient.setOnClickListener(v -> finish());
+    }
+
+    private void loadIngredientForEditing() {
+
+        Ingredient ingredient =
+                databaseHelper.getIngredientById(ingredientId);
+
+        if (ingredient != null) {
+
+            edtIngredientName.setText(
+                    ingredient.getName()
+            );
+
+            edtQuantity.setText(
+                    String.valueOf(ingredient.getQuantity())
+            );
+
+            edtUnit.setText(
+                    ingredient.getUnit()
+            );
+
+            edtExpiryDate.setText(
+                    ingredient.getExpiryDate()
+            );
+
+            edtCategory.setText(
+                    ingredient.getCategory()
+            );
+        }
     }
 
     private void saveIngredient() {
 
-        // Get values from form
         String name =
-                edtIngredientName
-                        .getText()
-                        .toString()
-                        .trim();
+                edtIngredientName.getText().toString().trim();
 
         String quantityText =
-                edtQuantity
-                        .getText()
-                        .toString()
-                        .trim();
+                edtQuantity.getText().toString().trim();
 
         String unit =
-                edtUnit
-                        .getText()
-                        .toString()
-                        .trim();
+                edtUnit.getText().toString().trim();
 
         String expiryDate =
-                edtExpiryDate
-                        .getText()
-                        .toString()
-                        .trim();
+                edtExpiryDate.getText().toString().trim();
 
         String category =
-                edtCategory
-                        .getText()
-                        .toString()
-                        .trim();
+                edtCategory.getText().toString().trim();
 
-        // Validate name
+        // Validation
         if (name.isEmpty()) {
 
             edtIngredientName.setError(
@@ -105,11 +113,9 @@ public class AddEditIngredientActivity extends AppCompatActivity {
             );
 
             edtIngredientName.requestFocus();
-
             return;
         }
 
-        // Validate quantity
         if (quantityText.isEmpty()) {
 
             edtQuantity.setError(
@@ -117,11 +123,9 @@ public class AddEditIngredientActivity extends AppCompatActivity {
             );
 
             edtQuantity.requestFocus();
-
             return;
         }
 
-        // Validate unit
         if (unit.isEmpty()) {
 
             edtUnit.setError(
@@ -129,7 +133,6 @@ public class AddEditIngredientActivity extends AppCompatActivity {
             );
 
             edtUnit.requestFocus();
-
             return;
         }
 
@@ -137,7 +140,9 @@ public class AddEditIngredientActivity extends AppCompatActivity {
 
         try {
 
-            quantity = Double.parseDouble(quantityText);
+            quantity = Double.parseDouble(
+                    quantityText.replace(",", ".")
+            );
 
         } catch (NumberFormatException e) {
 
@@ -146,42 +151,70 @@ public class AddEditIngredientActivity extends AppCompatActivity {
             );
 
             edtQuantity.requestFocus();
-
             return;
         }
 
-        // Create Ingredient object
-        Ingredient ingredient =
-                new Ingredient(
-                        name,
-                        quantity,
-                        unit,
-                        expiryDate,
-                        category
-                );
+        Ingredient ingredient = new Ingredient(
+                name,
+                quantity,
+                unit,
+                expiryDate,
+                category
+        );
 
-        // Insert into SQLite database
-        long result =
-                databaseHelper.addIngredient(ingredient);
+        // EDIT existing ingredient
+        if (ingredientId != -1) {
 
-        if (result != -1) {
+            ingredient.setId(ingredientId);
 
-            Toast.makeText(
-                    this,
-                    "Ingredient saved successfully",
-                    Toast.LENGTH_SHORT
-            ).show();
+            int result =
+                    databaseHelper.updateIngredient(ingredient);
 
-            // Close Add Ingredient screen
-            finish();
+            if (result > 0) {
 
-        } else {
+                Toast.makeText(
+                        this,
+                        "Ingredient updated successfully",
+                        Toast.LENGTH_SHORT
+                ).show();
 
-            Toast.makeText(
-                    this,
-                    "Error saving ingredient",
-                    Toast.LENGTH_SHORT
-            ).show();
+                finish();
+
+            } else {
+
+                Toast.makeText(
+                        this,
+                        "Error updating ingredient",
+                        Toast.LENGTH_SHORT
+                ).show();
+            }
+
+        }
+
+        // ADD new ingredient
+        else {
+
+            long result =
+                    databaseHelper.addIngredient(ingredient);
+
+            if (result != -1) {
+
+                Toast.makeText(
+                        this,
+                        "Ingredient saved successfully",
+                        Toast.LENGTH_SHORT
+                ).show();
+
+                finish();
+
+            } else {
+
+                Toast.makeText(
+                        this,
+                        "Error saving ingredient",
+                        Toast.LENGTH_SHORT
+                ).show();
+            }
         }
     }
 }
