@@ -1,5 +1,6 @@
 package com.example.myapplication;
 
+import android.content.ContentValues;
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
@@ -64,5 +65,19 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.execSQL("DROP TABLE IF EXISTS recipes");
         db.execSQL("DROP TABLE IF EXISTS ingredients");
         onCreate(db);
+    }
+    public long addIngredient(Ingredient ingredient) {
+
+        SQLiteDatabase db = this.getWritableDatabase();
+
+        ContentValues values = new ContentValues();
+
+        values.put("name", ingredient.getName());
+        values.put("quantity", ingredient.getQuantity());
+        values.put("unit", ingredient.getUnit());
+        values.put("expiry_date", ingredient.getExpiryDate());
+        values.put("category", ingredient.getCategory());
+
+        return db.insert("ingredients", null, values);
     }
 }
