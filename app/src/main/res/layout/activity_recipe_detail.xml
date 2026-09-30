@@ -12,11 +12,29 @@
         android:padding="20dp">
 
         <TextView
+            android:id="@+id/txtRecipeName"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Pasta with Tomato Sauce"
             android:textSize="28sp"
             android:textStyle="bold"
+            android:layout_marginBottom="8dp" />
+
+        <TextView
+            android:id="@+id/txtRecipeDescription"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="A delicious Italian pasta dish."
+            android:textSize="16sp"
+            android:layout_marginBottom="8dp" />
+
+        <TextView
+            android:id="@+id/txtRecipeMatch"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Pantry Match: 100%"
+            android:textSize="16sp"
+            android:textStyle="italic"
             android:layout_marginBottom="20dp" />
 
         <TextView
@@ -28,6 +46,7 @@
             android:layout_marginBottom="10dp" />
 
         <TextView
+            android:id="@+id/txtRecipeIngredients"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="• Pasta&#10;• Tomatoes&#10;• Onion&#10;• Garlic&#10;• Cooking oil"
@@ -43,6 +62,7 @@
             android:layout_marginBottom="10dp" />
 
         <TextView
+            android:id="@+id/txtRecipeInstructions"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="1. Cook the pasta.&#10;&#10;2. Fry the onion and garlic.&#10;&#10;3. Add the tomatoes.&#10;&#10;4. Combine the sauce with the pasta.&#10;&#10;5. Serve."

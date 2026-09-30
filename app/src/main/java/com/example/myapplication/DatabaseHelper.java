@@ -5,6 +5,7 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.util.Log;
 
 import java.util.ArrayList;
 
@@ -19,30 +20,47 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     @Override
     public void onCreate(SQLiteDatabase db) {
-        String createIngredientsTable = "CREATE TABLE ingredients (" +
-                "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
-                "name TEXT, " +
-                "quantity REAL, " +
-                "unit TEXT, " +
-                "expiry_date TEXT, " +
-                "category TEXT" +
-                ")";
 
-        String createRecipesTable = "CREATE TABLE recipes (" +
-                "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
-                "name TEXT, " +
-                "description TEXT, " +
-                "instructions TEXT" +
-                ")";
+        // Enable foreign key support
+        db.execSQL("PRAGMA foreign_keys=ON;");
 
-        String createRecipeIngredientsTable = "CREATE TABLE recipe_ingredients (" +
-                "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
-                "recipe_id INTEGER, " +
-                "ingredient_name TEXT, " +
-                "quantity REAL, " +
-                "unit TEXT, " +
-                "FOREIGN KEY (recipe_id) REFERENCES recipes(id)" +
-                ")";
+        // ---------------------------------------------------------
+        // INGREDIENTS TABLE
+        // ---------------------------------------------------------
+        String createIngredientsTable =
+                "CREATE TABLE IF NOT EXISTS ingredients (" +
+                        "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                        "name TEXT NOT NULL, " +
+                        "quantity REAL DEFAULT 0, " +
+                        "unit TEXT, " +
+                        "expiry_date TEXT, " +
+                        "category TEXT" +
+                        ")";
+
+        // ---------------------------------------------------------
+        // RECIPES TABLE
+        // ---------------------------------------------------------
+        String createRecipesTable =
+                "CREATE TABLE IF NOT EXISTS recipes (" +
+                        "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                        "name TEXT NOT NULL, " +
+                        "description TEXT, " +
+                        "instructions TEXT" +
+                        ")";
+
+        // ---------------------------------------------------------
+        // RECIPE INGREDIENTS TABLE
+        // ---------------------------------------------------------
+        String createRecipeIngredientsTable =
+                "CREATE TABLE IF NOT EXISTS recipe_ingredients (" +
+                        "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                        "recipe_id INTEGER NOT NULL, " +
+                        "ingredient_name TEXT NOT NULL, " +
+                        "quantity REAL DEFAULT 0, " +
+                        "unit TEXT, " +
+                        "FOREIGN KEY (recipe_id) REFERENCES recipes(id) " +
+                        "ON DELETE CASCADE" +
+                        ")";
 
         db.execSQL(createIngredientsTable);
         db.execSQL(createRecipesTable);
@@ -50,12 +68,176 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
     @Override
-    public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        db.execSQL("DROP TABLE IF EXISTS recipe_ingredients");
-        db.execSQL("DROP TABLE IF EXISTS recipes");
-        db.execSQL("DROP TABLE IF EXISTS ingredients");
-        onCreate(db);
+    public void onOpen(SQLiteDatabase db) {
+        super.onOpen(db);
+
+        if (!db.isReadOnly()) {
+
+            // Enable foreign key support
+            db.execSQL("PRAGMA foreign_keys=ON;");
+
+            // Make sure required database structures exist
+            ensureDatabaseStructure(db);
+        }
     }
+
+    @Override
+    public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+
+        Log.d(
+                "DatabaseHelper",
+                "Upgrading database from version " +
+                        oldVersion +
+                        " to " +
+                        newVersion
+        );
+
+        // Make sure all required tables and columns exist.
+        ensureDatabaseStructure(db);
+    }
+
+    private void ensureDatabaseStructure(SQLiteDatabase db) {
+
+        try {
+
+            // =====================================================
+            // INGREDIENTS TABLE
+            // =====================================================
+
+            db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS ingredients (" +
+                            "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                            "name TEXT NOT NULL, " +
+                            "quantity REAL DEFAULT 0, " +
+                            "unit TEXT, " +
+                            "expiry_date TEXT, " +
+                            "category TEXT" +
+                            ")"
+            );
+
+
+            // =====================================================
+            // RECIPES TABLE
+            // =====================================================
+
+            db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS recipes (" +
+                            "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                            "name TEXT NOT NULL, " +
+                            "description TEXT, " +
+                            "instructions TEXT" +
+                            ")"
+            );
+
+
+            // =====================================================
+            // RECIPE INGREDIENTS TABLE
+            // =====================================================
+
+            db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS recipe_ingredients (" +
+                            "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                            "recipe_id INTEGER NOT NULL, " +
+                            "ingredient_name TEXT NOT NULL, " +
+                            "quantity REAL DEFAULT 0, " +
+                            "unit TEXT, " +
+                            "FOREIGN KEY (recipe_id) REFERENCES recipes(id) " +
+                            "ON DELETE CASCADE" +
+                            ")"
+            );
+
+
+            // =====================================================
+            // CHECK RECIPE INGREDIENTS COLUMNS
+            // =====================================================
+
+            boolean hasQuantity = false;
+            boolean hasUnit = false;
+            boolean hasIngredientName = false;
+            boolean hasRecipeId = false;
+
+            try (Cursor cursor =
+                         db.rawQuery(
+                                 "PRAGMA table_info(recipe_ingredients)",
+                                 null
+                         )) {
+
+                int nameIndex = cursor.getColumnIndex("name");
+
+                while (cursor.moveToNext()) {
+
+                    if (nameIndex == -1) {
+                        continue;
+                    }
+
+                    String columnName =
+                            cursor.getString(nameIndex);
+
+                    if ("quantity".equalsIgnoreCase(columnName)) {
+                        hasQuantity = true;
+                    }
+
+                    if ("unit".equalsIgnoreCase(columnName)) {
+                        hasUnit = true;
+                    }
+
+                    if ("ingredient_name".equalsIgnoreCase(columnName)) {
+                        hasIngredientName = true;
+                    }
+
+                    if ("recipe_id".equalsIgnoreCase(columnName)) {
+                        hasRecipeId = true;
+                    }
+                }
+            }
+
+
+            // =====================================================
+            // ADD MISSING COLUMNS
+            // =====================================================
+
+            if (!hasQuantity) {
+
+                db.execSQL(
+                        "ALTER TABLE recipe_ingredients " +
+                                "ADD COLUMN quantity REAL DEFAULT 0"
+                );
+            }
+
+            if (!hasUnit) {
+
+                db.execSQL(
+                        "ALTER TABLE recipe_ingredients " +
+                                "ADD COLUMN unit TEXT"
+                );
+            }
+
+            if (!hasIngredientName) {
+
+                db.execSQL(
+                        "ALTER TABLE recipe_ingredients " +
+                                "ADD COLUMN ingredient_name TEXT"
+                );
+            }
+
+            if (!hasRecipeId) {
+
+                db.execSQL(
+                        "ALTER TABLE recipe_ingredients " +
+                                "ADD COLUMN recipe_id INTEGER"
+                );
+            }
+
+        } catch (Exception e) {
+
+            Log.e(
+                    "DatabaseHelper",
+                    "Error ensuring database structure",
+                    e
+            );
+        }
+    }
+
 
     // =========================================================
     // INGREDIENT METHODS
@@ -130,15 +312,55 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
     // =========================================================
+    // CHECK IF PANTRY QUANTITY IS SUFFICIENT
+    // =========================================================
+    private boolean isQuantityAvailable(
+            double pantryQuantity,
+            String pantryUnit,
+            double requiredQuantity,
+            String recipeUnit) {
+
+        // If no quantity was specified in the recipe,
+        // only check that the ingredient exists.
+        if (requiredQuantity <= 0) {
+            return true;
+        }
+
+        // Clean units
+        String pantryUnitClean =
+                pantryUnit == null
+                        ? ""
+                        : pantryUnit.trim().toLowerCase();
+
+        String recipeUnitClean =
+                recipeUnit == null
+                        ? ""
+                        : recipeUnit.trim().toLowerCase();
+
+        // -----------------------------------------------------
+        // Units must match for quantity comparison
+        // -----------------------------------------------------
+        if (!pantryUnitClean.equals(recipeUnitClean)) {
+
+            // Different units cannot safely be compared.
+            // Ingredient existence still counts as available.
+            return true;
+        }
+
+        // -----------------------------------------------------
+        // Pantry must have enough quantity
+        // -----------------------------------------------------
+        return pantryQuantity >= requiredQuantity;
+    }
+
+    // =========================================================
     // GET SUGGESTED RECIPES
     // =========================================================
     public ArrayList<Recipe> getSuggestedRecipes() {
 
-        ArrayList<Recipe> suggestedRecipes =
-                new ArrayList<>();
+        ArrayList<Recipe> suggestedRecipes = new ArrayList<>();
 
-        SQLiteDatabase db =
-                this.getReadableDatabase();
+        SQLiteDatabase db = this.getReadableDatabase();
 
         // Get all recipes
         Cursor recipeCursor = db.rawQuery(
@@ -151,10 +373,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
             Recipe recipe = new Recipe();
 
-            int recipeId =
-                    recipeCursor.getInt(
-                            recipeCursor.getColumnIndexOrThrow("id")
-                    );
+            int recipeId = recipeCursor.getInt(
+                    recipeCursor.getColumnIndexOrThrow("id")
+            );
 
             recipe.setId(recipeId);
 
@@ -180,7 +401,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             // Get ingredients required by this recipe
             // -------------------------------------------------
             Cursor ingredientCursor = db.rawQuery(
-                    "SELECT ingredient_name " +
+                    "SELECT ingredient_name, quantity, unit " +
                             "FROM recipe_ingredients " +
                             "WHERE recipe_id = ?",
                     new String[]{
@@ -200,13 +421,27 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                                 )
                         );
 
+                double requiredQuantity =
+                        ingredientCursor.getDouble(
+                                ingredientCursor.getColumnIndexOrThrow(
+                                        "quantity"
+                                )
+                        );
+
+                String recipeUnit =
+                        ingredientCursor.getString(
+                                ingredientCursor.getColumnIndexOrThrow(
+                                        "unit"
+                                )
+                        );
+
                 totalIngredients++;
 
                 // -------------------------------------------------
-                // Check if ingredient exists in user's pantry
+                // Find matching ingredient in pantry
                 // -------------------------------------------------
                 Cursor pantryCursor = db.rawQuery(
-                        "SELECT id " +
+                        "SELECT quantity, unit " +
                                 "FROM ingredients " +
                                 "WHERE LOWER(TRIM(name)) = LOWER(TRIM(?))",
                         new String[]{
@@ -214,12 +449,43 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                         }
                 );
 
-                // Ingredient exists in pantry
+                boolean ingredientAvailable = false;
+
                 if (pantryCursor.moveToFirst()) {
-                    matchedIngredients++;
+
+                    double pantryQuantity =
+                            pantryCursor.getDouble(
+                                    pantryCursor.getColumnIndexOrThrow(
+                                            "quantity"
+                                    )
+                            );
+
+                    String pantryUnit =
+                            pantryCursor.getString(
+                                    pantryCursor.getColumnIndexOrThrow(
+                                            "unit"
+                                    )
+                            );
+
+                    // -------------------------------------------------
+                    // Check quantity and unit
+                    // -------------------------------------------------
+                    if (isQuantityAvailable(
+                            pantryQuantity,
+                            pantryUnit,
+                            requiredQuantity,
+                            recipeUnit)) {
+
+                        ingredientAvailable = true;
+                    }
                 }
 
                 pantryCursor.close();
+
+                // Ingredient exists and sufficient quantity is available
+                if (ingredientAvailable) {
+                    matchedIngredients++;
+                }
             }
 
             ingredientCursor.close();
@@ -236,21 +502,15 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                                 totalIngredients) * 100;
             }
 
-            recipe.setTotalIngredients(
-                    totalIngredients
-            );
+            recipe.setTotalIngredients(totalIngredients);
 
-            recipe.setMatchedIngredients(
-                    matchedIngredients
-            );
+            recipe.setMatchedIngredients(matchedIngredients);
 
-            recipe.setMatchPercentage(
-                    matchPercentage
-            );
+            recipe.setMatchPercentage(matchPercentage);
 
             // -------------------------------------------------
-            // Only suggest recipes where the user has
-            // at least ONE required ingredient.
+            // Only show recipes with at least one
+            // available ingredient
             // -------------------------------------------------
             if (matchedIngredients > 0) {
 
@@ -261,7 +521,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         recipeCursor.close();
 
         // -----------------------------------------------------
-        // Sort recipes from highest match to lowest match
+        // Sort highest match percentage first
         // -----------------------------------------------------
         suggestedRecipes.sort(
                 (recipe1, recipe2) ->
@@ -272,5 +532,114 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         );
 
         return suggestedRecipes;
+    }
+
+    // =========================================================
+    // RECIPE METHODS
+    // =========================================================
+
+    public Recipe getRecipeById(int id) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.rawQuery(
+                "SELECT id, name, description, instructions FROM recipes WHERE id = ?",
+                new String[]{String.valueOf(id)}
+        );
+
+        Recipe recipe = null;
+
+        if (cursor.moveToFirst()) {
+            recipe = new Recipe();
+            recipe.setId(cursor.getInt(cursor.getColumnIndexOrThrow("id")));
+            recipe.setName(cursor.getString(cursor.getColumnIndexOrThrow("name")));
+            recipe.setDescription(cursor.getString(cursor.getColumnIndexOrThrow("description")));
+            recipe.setInstructions(cursor.getString(cursor.getColumnIndexOrThrow("instructions")));
+
+            // Calculate matching ingredients from pantry
+            Cursor ingredientCursor = db.rawQuery(
+                    "SELECT ingredient_name, quantity, unit FROM recipe_ingredients WHERE recipe_id = ?",
+                    new String[]{String.valueOf(id)}
+            );
+
+            int totalIngredients = 0;
+            int matchedIngredients = 0;
+
+            while (ingredientCursor.moveToNext()) {
+                String recipeIngredient = ingredientCursor.getString(
+                        ingredientCursor.getColumnIndexOrThrow("ingredient_name")
+                );
+                double requiredQuantity = ingredientCursor.getDouble(
+                        ingredientCursor.getColumnIndexOrThrow("quantity")
+                );
+                String recipeUnit = ingredientCursor.getString(
+                        ingredientCursor.getColumnIndexOrThrow("unit")
+                );
+
+                totalIngredients++;
+
+                Cursor pantryCursor = db.rawQuery(
+                        "SELECT quantity, unit FROM ingredients WHERE LOWER(TRIM(name)) = LOWER(TRIM(?))",
+                        new String[]{recipeIngredient}
+                );
+
+                if (pantryCursor.moveToFirst()) {
+                    double pantryQuantity = pantryCursor.getDouble(
+                            pantryCursor.getColumnIndexOrThrow("quantity")
+                    );
+                    String pantryUnit = pantryCursor.getString(
+                            pantryCursor.getColumnIndexOrThrow("unit")
+                    );
+
+                    if (isQuantityAvailable(pantryQuantity, pantryUnit, requiredQuantity, recipeUnit)) {
+                        matchedIngredients++;
+                    }
+                }
+                pantryCursor.close();
+            }
+            ingredientCursor.close();
+
+            recipe.setTotalIngredients(totalIngredients);
+            recipe.setMatchedIngredients(matchedIngredients);
+
+            if (totalIngredients > 0) {
+                recipe.setMatchPercentage(((double) matchedIngredients / totalIngredients) * 100);
+            }
+        }
+
+        cursor.close();
+        return recipe;
+    }
+
+    public String getRecipeIngredients(int recipeId) {
+        StringBuilder builder = new StringBuilder();
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.rawQuery(
+                "SELECT ingredient_name, quantity, unit FROM recipe_ingredients WHERE recipe_id = ?",
+                new String[]{String.valueOf(recipeId)}
+        );
+
+        while (cursor.moveToNext()) {
+            String name = cursor.getString(cursor.getColumnIndexOrThrow("ingredient_name"));
+            double quantity = cursor.getDouble(cursor.getColumnIndexOrThrow("quantity"));
+            String unit = cursor.getString(cursor.getColumnIndexOrThrow("unit"));
+
+            builder.append("• ").append(name);
+            if (quantity > 0) {
+                builder.append(" - ");
+                if (quantity == (long) quantity) {
+                    builder.append((long) quantity);
+                } else {
+                    builder.append(quantity);
+                }
+                if (unit != null && !unit.trim().isEmpty()) {
+                    builder.append(" ").append(unit.trim());
+                }
+            } else if (unit != null && !unit.trim().isEmpty()) {
+                builder.append(" - ").append(unit.trim());
+            }
+            builder.append("\n");
+        }
+
+        cursor.close();
+        return builder.toString().trim();
     }
 }
