@@ -1,27 +1,36 @@
 package com.example.myapplication;
 
 import android.os.Bundle;
+import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+
+import java.util.ArrayList;
 
 public class RecipeDetailActivity extends AppCompatActivity {
 
     private TextView txtRecipeName;
     private TextView txtRecipeDescription;
     private TextView txtRecipeIngredients;
-    private TextView txtRecipeMatch;
     private TextView txtRecipeInstructions;
+
+    private Button btnBack;
 
     private DatabaseHelper databaseHelper;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
         super.onCreate(savedInstanceState);
 
         setContentView(R.layout.activity_recipe_detail);
 
-        // Find views
+        // =========================
+        // FIND VIEWS
+        // =========================
+
         txtRecipeName =
                 findViewById(R.id.txtRecipeName);
 
@@ -31,26 +40,50 @@ public class RecipeDetailActivity extends AppCompatActivity {
         txtRecipeIngredients =
                 findViewById(R.id.txtRecipeIngredients);
 
-        txtRecipeMatch =
-                findViewById(R.id.txtRecipeMatch);
-
         txtRecipeInstructions =
                 findViewById(R.id.txtRecipeInstructions);
 
-        // Database
+        btnBack =
+                findViewById(R.id.btnBack);
+
+        // =========================
+        // DATABASE
+        // =========================
+
         databaseHelper =
                 new DatabaseHelper(this);
 
-        // Get recipe ID
-        int recipeId =
-                getIntent().getIntExtra(
-                        "recipe_id",
-                        -1
-                );
+        // =========================
+        // BACK BUTTON
+        // =========================
 
-        if (recipeId != -1) {
-            loadRecipe(recipeId);
+        btnBack.setOnClickListener(v -> finish());
+
+        // =========================
+        // GET RECIPE ID
+        // =========================
+
+        int recipeId =
+                getIntent().getIntExtra("RECIPE_ID", -1);
+
+        if (recipeId == -1) {
+
+            Toast.makeText(
+                    this,
+                    "Recipe could not be found",
+                    Toast.LENGTH_SHORT
+            ).show();
+
+            finish();
+
+            return;
         }
+
+        // =========================
+        // LOAD RECIPE
+        // =========================
+
+        loadRecipe(recipeId);
     }
 
     private void loadRecipe(int recipeId) {
@@ -59,42 +92,63 @@ public class RecipeDetailActivity extends AppCompatActivity {
                 databaseHelper.getRecipeById(recipeId);
 
         if (recipe == null) {
+
+            Toast.makeText(
+                    this,
+                    "Recipe could not be found",
+                    Toast.LENGTH_SHORT
+            ).show();
+
+            finish();
+
             return;
         }
 
-        // Recipe name
+        // =========================
+        // DISPLAY RECIPE
+        // =========================
+
         txtRecipeName.setText(
                 recipe.getName()
         );
 
-        // Description
         txtRecipeDescription.setText(
                 recipe.getDescription()
         );
 
-        // Match percentage
-        txtRecipeMatch.setText(
-                String.format(
-                        "Pantry Match: %.0f%% (%d of %d ingredients)",
-                        recipe.getMatchPercentage(),
-                        recipe.getMatchedIngredients(),
-                        recipe.getTotalIngredients()
-                )
-        );
-
-        // Instructions
         txtRecipeInstructions.setText(
                 recipe.getInstructions()
         );
 
-        // Get recipe ingredients
-        String ingredients =
-                databaseHelper.getRecipeIngredients(
-                        recipeId
-                );
+        // =========================
+        // LOAD INGREDIENTS
+        // =========================
 
-        txtRecipeIngredients.setText(
-                ingredients
-        );
+        ArrayList<String> ingredients =
+                databaseHelper.getRecipeIngredients(recipeId);
+
+        StringBuilder ingredientText =
+                new StringBuilder();
+
+        for (String ingredient : ingredients) {
+
+            ingredientText
+                    .append("• ")
+                    .append(ingredient)
+                    .append("\n");
+        }
+
+        if (ingredientText.length() == 0) {
+
+            txtRecipeIngredients.setText(
+                    "No ingredients listed."
+            );
+
+        } else {
+
+            txtRecipeIngredients.setText(
+                    ingredientText.toString()
+            );
+        }
     }
 }

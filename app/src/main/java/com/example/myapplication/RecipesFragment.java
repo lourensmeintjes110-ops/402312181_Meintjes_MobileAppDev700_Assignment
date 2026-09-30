@@ -1,12 +1,12 @@
 package com.example.myapplication;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.TextView;
-import android.content.Intent;
 import android.widget.Button;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -26,6 +26,7 @@ public class RecipesFragment extends Fragment {
     private ArrayList<Recipe> recipeList;
 
     public RecipesFragment() {
+        // Required empty constructor
     }
 
     @Nullable
@@ -35,11 +36,16 @@ public class RecipesFragment extends Fragment {
             @Nullable ViewGroup container,
             @Nullable Bundle savedInstanceState) {
 
+        // Load Recipes screen
         View view = inflater.inflate(
                 R.layout.fragment_recipes,
                 container,
                 false
         );
+
+        // =========================
+        // FIND VIEWS
+        // =========================
 
         recyclerViewRecipes =
                 view.findViewById(
@@ -54,8 +60,11 @@ public class RecipesFragment extends Fragment {
         // =========================
         // ADD RECIPE BUTTON
         // =========================
+
         Button btnAddRecipe =
-                view.findViewById(R.id.btnAddRecipe);
+                view.findViewById(
+                        R.id.btnAddRecipe
+                );
 
         btnAddRecipe.setOnClickListener(v -> {
 
@@ -70,18 +79,28 @@ public class RecipesFragment extends Fragment {
         // =========================
         // DATABASE
         // =========================
+
         databaseHelper =
-                new DatabaseHelper(requireContext());
+                new DatabaseHelper(
+                        requireContext()
+                );
 
         // =========================
         // RECYCLER VIEW
         // =========================
+
         recyclerViewRecipes.setLayoutManager(
-                new LinearLayoutManager(requireContext())
+                new LinearLayoutManager(
+                        requireContext()
+                )
         );
 
         return view;
     }
+
+    // =========================
+    // SCREEN RESUMES
+    // =========================
 
     @Override
     public void onResume() {
@@ -94,15 +113,62 @@ public class RecipesFragment extends Fragment {
     // =========================
     // LOAD SUGGESTED RECIPES
     // =========================
+
     private void loadSuggestedRecipes() {
 
+        // Get suggested recipes from database
         recipeList =
                 databaseHelper.getSuggestedRecipes();
 
-        RecipeAdapter adapter =
-                new RecipeAdapter(recipeList);
+        // Make sure the list is not null
+        if (recipeList == null) {
 
-        recyclerViewRecipes.setAdapter(adapter);
+            recipeList =
+                    new ArrayList<>();
+        }
+
+        // =========================
+        // CREATE RECIPE ADAPTER
+        // =========================
+
+        RecipeAdapter adapter =
+                new RecipeAdapter(
+                        recipeList,
+                        new RecipeAdapter.OnRecipeClickListener() {
+
+                            @Override
+                            public void onRecipeClick(
+                                    Recipe recipe) {
+
+                                // =========================
+                                // OPEN RECIPE DETAIL
+                                // =========================
+
+                                Intent intent =
+                                        new Intent(
+                                                requireActivity(),
+                                                RecipeDetailActivity.class
+                                        );
+
+                                // Pass recipe ID
+                                intent.putExtra(
+                                        "RECIPE_ID",
+                                        recipe.getId()
+                                );
+
+                                startActivity(intent);
+                            }
+                        }
+                );
+
+        // Attach adapter
+        recyclerViewRecipes.setAdapter(
+                adapter
+        );
+
+        // =========================
+        // CHECK IF RECIPES EXIST
+        // =========================
 
         if (recipeList.isEmpty()) {
 
